@@ -1,0 +1,28 @@
+#!/Users/sarahvaccaro/anaconda/bin/python    
+
+import pandas as pd
+import cobra
+import os
+import pickle
+    
+
+#for f in os.listdir('models'):
+#    if f.endswith('pickle'):
+#        f = 'models/%s' % f
+#        model = pickle.load(open(f,'rb'))
+
+
+model = pickle.load(open('models/Klebsiella pneumoniae 540_1460 1304923.3.pickle','rb'))
+
+# First set all uptake rates to zero #
+#for rxn in model.reactions:
+#    if rxn.startswith('EX_'):
+#        print rxn
+#        for metab in rxn.metabolites:
+#            print '%s: %s' % (metab.id, metab.formula)
+
+#        model.reactions.reaction.lower_bound=0
+# Iterate through each uptake reaction, set to -10, and test biomass growth #
+
+rxn = model.reactions[model.reactions.index('EX_glc__D_e')]
+print rxn

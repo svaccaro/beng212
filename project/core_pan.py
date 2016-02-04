@@ -1,0 +1,112 @@
+#!/Users/sarahvaccaro/anaconda/bin/python    
+
+import cobra
+import pickle
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import os
+# %matplotlib inline
+
+dictionary={}
+subsystems=[]
+core=[]
+pan=[]
+model_count=0
+
+
+def collect_reactions(model):
+    for reaction in model.reactions:
+        if reaction.lower_bound!=0 or reaction.upper_bound!=0:
+            sub = reaction.subsystem
+            rxn = reaction.id
+            if sub in dictionary:
+                if rxn in dictionary[sub]:
+                    dictionary[sub][rxn]+=1
+                else:
+                    dictionary[sub][rxn]=1
+            else:
+                dictionary[sub]={rxn:1}
+
+for f in os.listdir('models'):
+    if f.endswith('pickle'): #and 'UHKPC0' in f:
+        model_count += 1
+        f = 'models/%s' % f
+        print 'Analyzing model %s...' % f
+        model = pickle.load(open(f,'rb'))
+        collect_reactions(model)
+
+#print dictionary
+#print model_count
+
+
+
+for subsystem in dictionary:
+    subsystems.append(subsystem)
+    core_count=0
+    pan_count=0
+    for rxn in dictionary[subsystem]:
+        if dictionary[subsystem][rxn]==model_count:
+            core_count+=1
+        else:
+            pan_count+=1
+    core.append(core_count)
+    pan.append(pan_count)
+
+subsystems=tuple(subsystems)
+core=tuple(core)
+pan=tuple(pan)
+
+class HandlerSquare(HandlerPatch):
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        center = xdescent + 0.5 * (width - height), ydescent
+        p = mpatches.Rectangle(xy=center, width=height,
+                               height=height, angle=0.0)
+        self.update_prop(p, orig_handle, legend)
+        p.set_transform(trans)
+        return [p]  
+
+
+# plot horizontal stacked bar chart
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+n = range(len(subsystems))
+p1 = plt.barh(n, core, 0.7, color='#008080')
+p2 = plt.barh(n, pan, 0.7, color='#bfafb2', left=core)
+
+n = [x + 0.325 for x in n]
+plt.yticks(n, subsystems, size=6)
+plt.legend((p1[0], p2[0]), ('Core', 'Pan'), fontsize=14, handler_map={p1[0]: HandlerSquare(), p2[0]: HandlerSquare()})
+plt.xlim(0, 401)
+plt.ylim(-0.25, len(subsystems))
+plt.xlabel('Number of Reactions', fontweight='bold', size=12)
+plt.title('Reaction Distribution by Subsystem', fontweight='bold', size=14, x=0.2)
+
+plt.tick_params(
+    axis='y',
+    which='both',
+    left='off',
+    right='off',
+    width=2
+)
+
+plt.tick_params(
+    axis='x',
+    which='both',
+    direction='out',
+    top='off',
+    width=2
+)
+
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+
+for axis in ['left', 'bottom']:
+    ax.spines[axis].set_linewidth(2)
+    
+#plt.show()
+fig.savefig('fig-1.png', bbox_inches='tight', dpi=300)
+fig.savefig('fig-1.pdf', bbox_inches='tight', dpi=300)
+
